@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <title>Diptych</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" />
+  </noscript>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: #0a0a0a;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overscroll-behavior: none;
+      overflow: hidden;
+    }
+
+    #app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #0a0a0a;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .header {
+      padding: 40px 28px 10px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .header-titles { display: flex; flex-direction: column; gap: 3px; }
+    .title {
+      font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+      font-size: 30px;
+      color: #f5f0e8;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #444;
+      font-weight: 300;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid #1f1f1f;
+      color: #444;
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      visibility: hidden;
+    }
+    .clear-btn.visible { visibility: visible; }
+    .clear-btn:active { color: #888; background: #141414; }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 24px 6px;
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 0;
+      background: transparent;
+      border: none;
+      color: #333;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .tab.active { color: #f5f0e8; }
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 1px;
+      background: #f5f0e8;
+      transition: width 0.25s ease;
+    }
+    .tab.active::after { width: 24px; }
+
+    /* PROFILE STRIP */
+    .profile-strip {
+      display: none;
+      gap: 8px;
+      padding: 10px 16px 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+      scroll-snap-type: x proximity;
+    }
+    .profile-strip::-webkit-scrollbar { display: none; }
+    .profile-strip.visible { display: flex; }
+    .profile-chip {
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      padding: 8px 14px;
+      border-radius: 100px;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      color: #999;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 60vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .profile-chip:active { background: #181818; }
+    .profile-chip.active {
+      background: #f5f0e8;
+      color: #0a0a0a;
+      border-color: #f5f0e8;
+      font-weight: 500;
+    }
+    .profile-chip-pencil {
+      font-size: 11px;
+      opacity: 0.55;
+      margin-left: 2px;
+    }
+    .profile-chip-add {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 100px;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      color: #888;
+      font-family: inherit;
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .profile-chip-add:active { background: #1a1a1a; color: #f5f0e8; transform: scale(0.96); }
+
+    /* ACTION MODAL */
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .action-modal-btn {
+      width: 100%;
+      padding: 14px 0;
+      border-radius: 12px;
+      background: #1d1d1d;
+      border: 1px solid #2a2a2a;
+      color: #f5f0e8;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.1px;
+    }
+    .action-modal-btn:active { background: #262626; transform: scale(0.98); }
+    .action-modal-btn.danger { color: #c97777; border-color: #3a2222; background: #1a1010; }
+    .action-modal-btn.danger:active { background: #221414; }
+
+    /* PICK SCREEN */
+    #pick-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 24px 32px;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    .pick-cards { width: 100%; display: flex; gap: 12px; flex: 1; min-height: 0; }
+    .pick-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+    }
+    .pick-card {
+      flex: 1;
+      border-radius: 16px;
+      border: 1.5px dashed #282828;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-user-select: none;
+    }
+    .pick-label-input {
+      width: 100%;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: #ddd;
+      font-family: inherit;
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .pick-label-input:focus { border-color: #2e2e2e; background: #141414; color: #f5f0e8; }
+    .pick-label-input::placeholder { color: #3a3a3a; }
+    .pick-card:active { background: #161616; border-color: #333; }
+    .pick-card.filled { border-style: solid; border-color: #222; }
+    .pick-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .card-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.38);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-icon {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #1c1c1c;
+      border: 1px solid #2d2d2d;
+      display: flex; align-items: center; justify-content: center;
+      color: #555;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .card-label {
+      font-size: 11px;
+      color: #333;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .note {
+      font-size: 12px;
+      color: #2e2e2e;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .primary-btn {
+      width: 100%;
+      padding: 16px 0;
+      border-radius: 14px;
+      background: #f5f0e8;
+      color: #0a0a0a;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .primary-btn:disabled { background: #1a1a1a; color: #2e2e2e; cursor: not-allowed; }
+    .primary-btn:not(:disabled):active { transform: scale(0.98); background: #e8e3dc; }
+    input[type="file"] { display: none; }
+
+    /* COMPARE SCREEN */
+    #compare-screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
+    .image-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #111;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .slide img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+    .slide.hidden-left  { opacity: 0; transform: translateX(-16px); pointer-events: none; }
+    .slide.hidden-right { opacity: 0; transform: translateX(16px);  pointer-events: none; }
+    .slide.visible      { opacity: 1; transform: translateX(0); }
+
+    .compare-header {
+      flex-shrink: 0;
+      padding: 12px 24px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .compare-label {
+      color: #f5f0e8;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      max-width: 70%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .compare-label-edit {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid #1f1f1f;
+      color: #666;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .compare-label-edit:active { background: #161616; color: #ccc; }
+
+    .tap-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      padding: 7px 16px;
+      border-radius: 100px;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: fadeHint 3s forwards;
+    }
+    @keyframes fadeHint {
+      0%   { opacity: 0; }
+      15%  { opacity: 1; }
+      75%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .bottom-bar {
+      flex-shrink: 0;
+      padding: 14px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dots { display: flex; gap: 10px; }
+    .dot { flex: 1; height: 2px; border-radius: 2px; background: #222; transition: background 0.25s; }
+    .dot.on { background: #f5f0e8; }
+    .labels { display: flex; justify-content: space-between; }
+    .photo-lbl { font-size: 12px; color: #333; transition: color 0.25s; }
+    .photo-lbl.on { color: #777; }
+    .action-row { display: flex; gap: 10px; }
+    .action-btn {
+      flex: 1;
+      padding: 12px 0;
+      border-radius: 10px;
+      border: 1px solid #1e1e1e;
+      background: #111;
+      color: #555;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.1px;
+    }
+    .action-btn:active { background: #181818; color: #888; transform: scale(0.98); }
+
+    /* QR SCREEN */
+    #qr-screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      padding: 16px 24px 32px;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    .qr-input-wrap { position: relative; display: flex; flex-direction: column; gap: 8px; }
+    .qr-input-label {
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding-left: 2px;
+    }
+    .qr-input {
+      width: 100%;
+      min-height: 96px;
+      max-height: 200px;
+      resize: vertical;
+      background: #111;
+      border: 1px solid #1f1f1f;
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: #f5f0e8;
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.4;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-appearance: none;
+    }
+    .qr-input:focus { border-color: #333; background: #131313; }
+    .qr-input::placeholder { color: #333; }
+
+    /* QR PRESETS */
+    .qr-presets-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .qr-presets-label {
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding-left: 2px;
+    }
+    .qr-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .qr-preset {
+      background: #111;
+      border: 1px solid #1f1f1f;
+      border-radius: 100px;
+      padding: 9px 16px;
+      color: #ccc;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .qr-preset::before {
+      content: '⚡';
+      color: #886;
+      font-size: 10px;
+    }
+    .qr-preset:active { background: #1a1a1a; color: #f5f0e8; border-color: #2a2a2a; transform: scale(0.97); }
+    .qr-output { display: none; flex-direction: column; align-items: center; gap: 14px; }
+    .qr-output.visible { display: flex; }
+    .qr-card {
+      background: #f5f0e8;
+      border-radius: 20px;
+      padding: 26px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .qr-card img {
+      width: 100%;
+      max-width: 280px;
+      aspect-ratio: 1;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      display: block;
+    }
+    .qr-card-caption {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .save-hint {
+      font-size: 11px;
+      color: #444;
+      text-align: center;
+      letter-spacing: 0.3px;
+      max-width: 280px;
+      line-height: 1.5;
+    }
+    .save-hint strong { color: #888; font-weight: 500; }
+    .error-msg { color: #c97777; font-size: 12px; text-align: center; padding: 8px; }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .modal-backdrop.open { display: flex; opacity: 1; }
+    .modal {
+      background: #161616;
+      border: 1px solid #242424;
+      border-radius: 18px;
+      padding: 22px 22px 16px;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      transform: scale(0.96);
+      transition: transform 0.18s ease;
+    }
+    .modal-backdrop.open .modal { transform: scale(1); }
+    .modal-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 19px;
+      color: #f5f0e8;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+    .modal-text {
+      font-size: 13px;
+      color: #777;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .modal-input {
+      width: 100%;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #f5f0e8;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 18px;
+      -webkit-appearance: none;
+    }
+    .modal-input:focus { border-color: #444; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-btn {
+      flex: 1;
+      padding: 11px 0;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .modal-btn.cancel { background: transparent; border-color: #2a2a2a; color: #888; }
+    .modal-btn.cancel:active { background: #1c1c1c; color: #aaa; }
+    .modal-btn.primary { background: #f5f0e8; color: #0a0a0a; }
+    .modal-btn.primary:active { background: #e8e3dc; transform: scale(0.98); }
+    .modal-btn.primary:disabled { background: #1a1a1a; color: #2e2e2e; cursor: not-allowed; }
+    .modal-btn.danger { background: #c97777; color: #0a0a0a; }
+    .modal-btn.danger:active { background: #b66666; transform: scale(0.98); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-titles">
+      <div class="title">Diptych</div>
+      <div class="subtitle" id="header-subtitle">Photo Compare</div>
+    </div>
+    <button class="clear-btn" id="clear-btn" onclick="clearActiveProfile()">Clear</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="photo" onclick="switchTab('photo')">Photos</button>
+    <button class="tab" data-tab="qr" onclick="switchTab('qr')">QR Code</button>
+  </div>
+
+  <!-- PROFILE STRIP -->
+  <div class="profile-strip" id="profile-strip"></div>
+
+  <!-- PHOTO PICK SCREEN -->
+  <div id="pick-screen">
+    <div class="pick-cards">
+      <div class="pick-col">
+        <div class="pick-card" id="card-0" onclick="triggerPick(0)">
+          <div class="card-icon">+</div>
+          <div class="card-label">Photo 1</div>
+        </div>
+        <input
+          class="pick-label-input"
+          id="label-input-0"
+          type="text"
+          maxlength="30"
+          placeholder="Photo 1"
+          oninput="onLabelInput(0, this.value)"
+        />
+      </div>
+      <div class="pick-col">
+        <div class="pick-card" id="card-1" onclick="triggerPick(1)">
+          <div class="card-icon">+</div>
+          <div class="card-label">Photo 2</div>
+        </div>
+        <input
+          class="pick-label-input"
+          id="label-input-1"
+          type="text"
+          maxlength="30"
+          placeholder="Photo 2"
+          oninput="onLabelInput(1, this.value)"
+        />
+      </div>
+    </div>
+    <div class="note" id="note">Select two photos to begin</div>
+    <button class="primary-btn" id="start-btn" disabled onclick="openCompare()">Compare Photos</button>
+    <input type="file" id="file-0" accept="image/*" onchange="handleFile(0, this)" />
+    <input type="file" id="file-1" accept="image/*" onchange="handleFile(1, this)" />
+  </div>
+
+  <!-- COMPARE SCREEN -->
+  <div id="compare-screen">
+    <div class="compare-header">
+      <div class="compare-label" id="compare-label">Photo 1</div>
+      <button class="compare-label-edit" onclick="editCompareLabel()" title="Edit label">✎</button>
+    </div>
+    <div class="image-stage" id="stage">
+      <div class="slide hidden-right" id="slide-0">
+        <img id="img-0" />
+      </div>
+      <div class="slide hidden-right" id="slide-1">
+        <img id="img-1" />
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <div class="dots">
+        <div class="dot on" id="dot-0"></div>
+        <div class="dot"    id="dot-1"></div>
+      </div>
+      <div class="labels">
+        <span class="photo-lbl on" id="lbl-0">Photo 1</span>
+        <span class="photo-lbl"    id="lbl-1">Photo 2</span>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="backToPick()">← Back</button>
+        <button class="action-btn" onclick="replaceCurrent()">↺ Replace current</button>
+      </div>
+    </div>
+    <input type="file" id="file-replace" accept="image/*" onchange="handleReplace(this)" />
+  </div>
+
+  <!-- QR SCREEN -->
+  <div id="qr-screen">
+    <div class="qr-presets-wrap">
+      <div class="qr-presets-label">Presets</div>
+      <div class="qr-presets">
+        <button class="qr-preset" onclick="useQRPreset('Spirit1776!')">Spirit1776!</button>
+      </div>
+    </div>
+    <div class="qr-input-wrap">
+      <div class="qr-input-label">Text or URL</div>
+      <textarea
+        id="qr-input"
+        class="qr-input"
+        placeholder="Type a URL, message, WiFi info, contact details, anything…"
+        oninput="onQRInput()"
+      ></textarea>
+    </div>
+    <button class="primary-btn" id="qr-gen-btn" disabled onclick="generateQR()">
+      Generate QR Code
+    </button>
+    <div class="error-msg" id="qr-error" style="display:none;"></div>
+    <div class="qr-output" id="qr-output">
+      <div class="qr-card">
+        <img id="qr-image" alt="QR code" />
+        <div class="qr-card-caption" id="qr-caption">Scan to view</div>
+      </div>
+      <div class="save-hint">
+        <strong>Long-press</strong> the QR code, then tap <strong>Save to Photos</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <div class="modal-title" id="modal-title">Confirm</div>
+      <div class="modal-text" id="modal-text"></div>
+      <input class="modal-input" id="modal-input" type="text" style="display:none" />
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeModal()" id="modal-cancel-btn">Cancel</button>
+        <button class="modal-btn primary" onclick="confirmModal()" id="modal-confirm-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE ACTION MODAL -->
+  <div class="modal-backdrop" id="action-modal-backdrop">
+    <div class="modal">
+      <div class="modal-title" id="action-modal-title">Profile</div>
+      <div class="action-buttons">
+        <button class="action-modal-btn" id="action-rename-btn" onclick="actionRename()">Rename profile</button>
+        <button class="action-modal-btn danger" id="action-delete-btn" onclick="actionDelete()">Delete profile</button>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeActionModal()" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─────────── INDEXEDDB ─────────── */
+  const DB_NAME = 'diptych-db';
+  const STORE = 'photos';
+  let dbPromise;
+
+  function openDB() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+  async function dbPut(key, blob) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(blob, key);
+      tx.oncomplete = () => res();
+      tx.onerror    = () => rej(tx.error);
+    });
+  }
+  async function dbGet(key) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const r = tx.objectStore(STORE).get(key);
+      r.onsuccess = () => res(r.result || null);
+      r.onerror   = () => rej(r.error);
+    });
+  }
+  async function dbDel(key) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = () => res();
+      tx.onerror    = () => rej(tx.error);
+    });
+  }
+
+  /* ─────────── PROFILES ─────────── */
+  // localStorage:
+  //   diptych-profiles = JSON [{id, name}]
+  //   diptych-active-profile = id
+  // IndexedDB key format:  photo-{profileId}-{slot}
+
+  let profiles = [];
+  let activeProfileId = null;
+
+  function loadProfilesFromStorage() {
+    try {
+      const raw = localStorage.getItem('diptych-profiles');
+      profiles = raw ? JSON.parse(raw) : [];
+    } catch { profiles = []; }
+    activeProfileId = localStorage.getItem('diptych-active-profile') || null;
+    // Migrate: ensure every profile has a labels array
+    profiles.forEach(p => {
+      if (!Array.isArray(p.labels) || p.labels.length !== 2) {
+        p.labels = ['Photo 1', 'Photo 2'];
+      }
+      // Migrate legacy default names
+      if (p.name === 'My Photos' || p.name === 'Spirit1776') p.name = 'Spirit of 76';
+    });
+  }
+
+  function getLabel(idx) {
+    const p = profiles.find(x => x.id === activeProfileId);
+    const stored = (p && p.labels && p.labels[idx]) ? String(p.labels[idx]).trim() : '';
+    return stored || ('Photo ' + (idx + 1));
+  }
+
+  function setLabel(idx, value) {
+    const p = profiles.find(x => x.id === activeProfileId);
+    if (!p) return;
+    if (!Array.isArray(p.labels)) p.labels = ['Photo 1', 'Photo 2'];
+    p.labels[idx] = String(value || '').slice(0, 30);
+    saveProfilesToStorage();
+  }
+
+  function onLabelInput(idx, value) {
+    setLabel(idx, value);
+    const lbl = document.getElementById('lbl-' + idx);
+    if (lbl) lbl.textContent = getLabel(idx);
+    if (currentTab === 'photo' && currentPhotoView === 'compare' && idx === current) {
+      document.getElementById('compare-label').textContent = getLabel(idx);
+    }
+  }
+
+  function updateLabelInputs() {
+    [0, 1].forEach(i => {
+      const inp = document.getElementById('label-input-' + i);
+      if (!inp) return;
+      const p = profiles.find(x => x.id === activeProfileId);
+      const raw = (p && p.labels && p.labels[i]) ? p.labels[i] : '';
+      inp.value = raw;
+    });
+  }
+
+  function updateAllLabels() {
+    updateLabelInputs();
+    [0, 1].forEach(i => {
+      const lbl = document.getElementById('lbl-' + i);
+      if (lbl) lbl.textContent = getLabel(i);
+    });
+    const cl = document.getElementById('compare-label');
+    if (cl) cl.textContent = getLabel(current);
+  }
+
+  function editCompareLabel() {
+    const idx = current;
+    const p = profiles.find(x => x.id === activeProfileId);
+    const stored = (p && p.labels && p.labels[idx]) ? p.labels[idx] : '';
+    showModal({
+      title: 'Edit label',
+      withInput: true,
+      inputDefault: stored,
+      inputPlaceholder: 'Photo ' + (idx + 1),
+      confirmLabel: 'Save',
+      onConfirm: (value) => {
+        setLabel(idx, value);
+        updateAllLabels();
+      }
+    });
+  }
+
+  function saveProfilesToStorage() {
+    localStorage.setItem('diptych-profiles', JSON.stringify(profiles));
+    if (activeProfileId) localStorage.setItem('diptych-active-profile', activeProfileId);
+  }
+
+  function genProfileId() {
+    return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  function photoKey(slot) { return 'photo-' + activeProfileId + '-' + slot; }
+
+  async function ensureDefaultProfile() {
+    if (profiles.length === 0) {
+      const id = genProfileId();
+      profiles = [{ id, name: 'Spirit of 76', labels: ['Photo 1', 'Photo 2'] }];
+      activeProfileId = id;
+      saveProfilesToStorage();
+
+      // Migrate any legacy photo-0 / photo-1 to this profile
+      try {
+        const [o0, o1] = await Promise.all([dbGet('photo-0'), dbGet('photo-1')]);
+        if (o0) { await dbPut('photo-' + id + '-0', o0); await dbDel('photo-0'); }
+        if (o1) { await dbPut('photo-' + id + '-1', o1); await dbDel('photo-1'); }
+      } catch (e) { console.warn('Migration skipped:', e); }
+    }
+    // Make sure active is valid
+    if (!activeProfileId || !profiles.find(p => p.id === activeProfileId)) {
+      activeProfileId = profiles[0].id;
+      saveProfilesToStorage();
+    }
+  }
+
+  async function loadActiveProfilePhotos() {
+    // Revoke old URLs
+    [0, 1].forEach(i => {
+      if (photoUrls[i]) { URL.revokeObjectURL(photoUrls[i]); photoUrls[i] = null; }
+    });
+    try {
+      const [b0, b1] = await Promise.all([dbGet(photoKey(0)), dbGet(photoKey(1))]);
+      if (b0) photoUrls[0] = URL.createObjectURL(b0);
+      if (b1) photoUrls[1] = URL.createObjectURL(b1);
+    } catch (e) { console.warn('Load profile photos failed:', e); }
+  }
+
+  function activeProfileName() {
+    const p = profiles.find(x => x.id === activeProfileId);
+    return p ? p.name : 'Profile';
+  }
+
+  function updateProfilePill() {
+    // Kept as alias for backwards compatibility within this file
+    renderProfileStrip();
+  }
+
+  async function selectProfile(id) {
+    if (id === activeProfileId) return;
+    activeProfileId = id;
+    saveProfilesToStorage();
+    await loadActiveProfilePhotos();
+    renderCard(0);
+    renderCard(1);
+    updateNote();
+    updateClearBtn();
+    updateProfilePill();
+    updateAllLabels();
+    // After switching profile, default behavior: if both photos exist → compare, else → pick
+    currentPhotoView = (photoUrls[0] && photoUrls[1]) ? 'compare' : 'pick';
+    if (currentTab === 'photo') {
+      if (currentPhotoView === 'compare') openCompare();
+      else showPhotoView('pick');
+    }
+  }
+
+  async function deleteProfile(id) {
+    showModal({
+      title: 'Delete profile?',
+      text: 'This will remove the profile and both of its photos.',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        // Remove the photos from IDB
+        try {
+          await dbDel('photo-' + id + '-0');
+          await dbDel('photo-' + id + '-1');
+        } catch {}
+        // Remove from list
+        profiles = profiles.filter(p => p.id !== id);
+        // If deleted active, pick another (or create default)
+        if (id === activeProfileId) {
+          if (profiles.length === 0) {
+            const newId = genProfileId();
+            profiles = [{ id: newId, name: 'Spirit of 76', labels: ['Photo 1', 'Photo 2'] }];
+            activeProfileId = newId;
+          } else {
+            activeProfileId = profiles[0].id;
+          }
+          saveProfilesToStorage();
+          await loadActiveProfilePhotos();
+          renderCard(0);
+          renderCard(1);
+          updateNote();
+          updateClearBtn();
+          updateProfilePill();
+          updateAllLabels();
+          currentPhotoView = (photoUrls[0] && photoUrls[1]) ? 'compare' : 'pick';
+          if (currentTab === 'photo') {
+            if (currentPhotoView === 'compare') openCompare();
+            else showPhotoView('pick');
+          }
+        } else {
+          saveProfilesToStorage();
+        }
+        renderProfileStrip();
+      }
+    });
+  }
+
+  function renameProfile(id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    showModal({
+      title: 'Rename profile',
+      text: '',
+      withInput: true,
+      inputDefault: p.name,
+      inputPlaceholder: 'Profile name',
+      confirmLabel: 'Save',
+      onConfirm: (value) => {
+        const trimmed = (value || '').trim();
+        if (!trimmed) return;
+        p.name = trimmed.slice(0, 40);
+        saveProfilesToStorage();
+        renderProfileStrip();
+      }
+    });
+  }
+
+  function promptNewProfile() {
+    showModal({
+      title: 'New profile',
+      text: '',
+      withInput: true,
+      inputDefault: '',
+      inputPlaceholder: 'e.g. Vacation, Outfits, Recipes…',
+      confirmLabel: 'Create',
+      onConfirm: async (value) => {
+        const name = (value || '').trim().slice(0, 40) || 'Untitled';
+        const id = genProfileId();
+        profiles.push({ id, name, labels: ['Photo 1', 'Photo 2'] });
+        activeProfileId = id;
+        saveProfilesToStorage();
+        await loadActiveProfilePhotos();
+        renderCard(0);
+        renderCard(1);
+        updateNote();
+        updateClearBtn();
+        updateProfilePill();
+        updateAllLabels();
+        // Fresh profile → pick view
+        currentPhotoView = 'pick';
+        if (currentTab === 'photo') showPhotoView('pick');
+      }
+    });
+  }
+
+  /* ─────────── PROFILE STRIP + ACTION MODAL ─────────── */
+  function renderProfileStrip() {
+    const strip = document.getElementById('profile-strip');
+    strip.innerHTML = '';
+    profiles.forEach(p => {
+      const chip = document.createElement('button');
+      chip.className = 'profile-chip' + (p.id === activeProfileId ? ' active' : '');
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = p.name;
+      chip.appendChild(nameSpan);
+      if (p.id === activeProfileId) {
+        const pencil = document.createElement('span');
+        pencil.className = 'profile-chip-pencil';
+        pencil.textContent = '✎';
+        chip.appendChild(pencil);
+      }
+      chip.onclick = () => {
+        if (p.id === activeProfileId) {
+          openProfileActions(p.id);
+        } else {
+          selectProfile(p.id);
+        }
+      };
+      strip.appendChild(chip);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'profile-chip-add';
+    addBtn.textContent = '+';
+    addBtn.title = 'New profile';
+    addBtn.onclick = promptNewProfile;
+    strip.appendChild(addBtn);
+
+    // Scroll active chip into view
+    setTimeout(() => {
+      const activeChip = strip.querySelector('.profile-chip.active');
+      if (activeChip && activeChip.scrollIntoView) {
+        activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    }, 50);
+  }
+
+  let actionTargetId = null;
+
+  function openProfileActions(id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    actionTargetId = id;
+    document.getElementById('action-modal-title').textContent = p.name;
+    const delBtn = document.getElementById('action-delete-btn');
+    delBtn.style.display = profiles.length > 1 ? '' : 'none';
+    document.getElementById('action-modal-backdrop').classList.add('open');
+  }
+
+  function closeActionModal() {
+    document.getElementById('action-modal-backdrop').classList.remove('open');
+    actionTargetId = null;
+  }
+
+  function actionRename() {
+    const id = actionTargetId;
+    closeActionModal();
+    setTimeout(() => { if (id) renameProfile(id); }, 120);
+  }
+
+  function actionDelete() {
+    const id = actionTargetId;
+    closeActionModal();
+    setTimeout(() => { if (id) deleteProfile(id); }, 120);
+  }
+
+  /* ─────────── APP STATE ─────────── */
+  const photoUrls = [null, null];
+  let current = 0;
+  let busy = false;
+  let currentTab = 'photo';
+  let currentPhotoView = 'pick';
+  let lastQRText = '';
+  try {
+    lastQRText = localStorage.getItem('diptych-qr-text') || '';
+    if (lastQRText === 'Spirit1776') lastQRText = 'Spirit1776!';
+  } catch {}
+
+  /* ─────────── TABS ─────────── */
+  function switchTab(name) {
+    currentTab = name;
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === name);
+    });
+    document.getElementById('clear-btn').style.display = (name === 'photo') ? '' : 'none';
+    document.getElementById('profile-strip').classList.toggle('visible', name === 'photo');
+
+    if (name === 'photo') {
+      document.getElementById('header-subtitle').textContent = 'Photo Compare';
+      document.getElementById('qr-screen').style.display = 'none';
+      if (currentPhotoView === 'compare' && photoUrls[0] && photoUrls[1]) {
+        openCompare();
+      } else {
+        showPhotoView('pick');
+      }
+    } else {
+      document.getElementById('header-subtitle').textContent = 'QR Generator';
+      document.getElementById('pick-screen').style.display = 'none';
+      document.getElementById('compare-screen').style.display = 'none';
+      document.getElementById('qr-screen').style.display = 'flex';
+    }
+    try { localStorage.setItem('diptych-tab', name); } catch {}
+  }
+
+  /* ─────────── PHOTO PICK ─────────── */
+  function triggerPick(idx) { document.getElementById('file-' + idx).click(); }
+
+  async function handleFile(idx, input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+    try { await dbPut(photoKey(idx), file); }
+    catch (e) { alert('Could not save photo: ' + e.message); return; }
+    if (photoUrls[idx]) URL.revokeObjectURL(photoUrls[idx]);
+    photoUrls[idx] = URL.createObjectURL(file);
+    // Auto-default label to last-generated QR text if this slot has no label yet
+    const p = profiles.find(x => x.id === activeProfileId);
+    const currentLabel = (p && p.labels && p.labels[idx]) ? String(p.labels[idx]).trim() : '';
+    if (!currentLabel && lastQRText) {
+      setLabel(idx, lastQRText);
+      updateAllLabels();
+    }
+    renderCard(idx);
+    updateNote();
+    updateClearBtn();
+  }
+
+  function renderCard(idx) {
+    const card = document.getElementById('card-' + idx);
+    card.innerHTML = '';
+    if (photoUrls[idx]) {
+      card.classList.add('filled');
+      const img = document.createElement('img');
+      img.src = photoUrls[idx];
+      const ov = document.createElement('div');
+      ov.className = 'card-overlay';
+      const ic = document.createElement('div');
+      ic.className = 'card-icon';
+      ic.textContent = '↺';
+      ov.appendChild(ic);
+      card.appendChild(img);
+      card.appendChild(ov);
+    } else {
+      card.classList.remove('filled');
+      const ic = document.createElement('div');
+      ic.className = 'card-icon';
+      ic.textContent = '+';
+      const lbl = document.createElement('div');
+      lbl.className = 'card-label';
+      lbl.textContent = 'Photo ' + (idx + 1);
+      card.appendChild(ic);
+      card.appendChild(lbl);
+    }
+  }
+
+  function updateNote() {
+    const note = document.getElementById('note');
+    const btn  = document.getElementById('start-btn');
+    const both = photoUrls[0] && photoUrls[1];
+    const none = !photoUrls[0] && !photoUrls[1];
+    note.textContent = both ? 'Both photos saved — ready to compare'
+                     : none ? 'Select two photos to begin'
+                            : 'Select one more photo to begin';
+    btn.disabled = !both;
+  }
+
+  function updateClearBtn() {
+    const any = photoUrls[0] || photoUrls[1];
+    document.getElementById('clear-btn').classList.toggle('visible', !!any);
+  }
+
+  async function clearActiveProfile() {
+    showModal({
+      title: 'Clear photos?',
+      text: 'This removes both photos from "' + activeProfileName() + '". The profile stays.',
+      confirmLabel: 'Clear',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await dbDel(photoKey(0));
+          await dbDel(photoKey(1));
+        } catch (e) { console.warn(e); }
+        [0,1].forEach(i => {
+          if (photoUrls[i]) URL.revokeObjectURL(photoUrls[i]);
+          photoUrls[i] = null;
+          renderCard(i);
+        });
+        updateNote();
+        updateClearBtn();
+        showPhotoView('pick');
+      }
+    });
+  }
+
+  /* ─────────── COMPARE ─────────── */
+  function openCompare() {
+    current = 0;
+    document.getElementById('img-0').src = photoUrls[0];
+    document.getElementById('img-1').src = photoUrls[1];
+    document.getElementById('compare-label').textContent = getLabel(0);
+    document.getElementById('lbl-0').textContent = getLabel(0);
+    document.getElementById('lbl-1').textContent = getLabel(1);
+    showPhotoView('compare');
+    const s0 = document.getElementById('slide-0');
+    const s1 = document.getElementById('slide-1');
+    s0.className = 'slide hidden-right';
+    s1.className = 'slide hidden-right';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      s0.className = 'slide visible';
+    }));
+    updateIndicators();
+    addHint();
+  }
+
+  function addHint() {
+    const stage = document.getElementById('stage');
+    const old = stage.querySelector('.tap-hint');
+    if (old) old.remove();
+    const h = document.createElement('div');
+    h.className = 'tap-hint';
+    h.textContent = 'Tap or swipe to switch';
+    stage.appendChild(h);
+    setTimeout(() => h.remove(), 3200);
+  }
+
+  function swap() {
+    if (busy) return;
+    busy = true;
+    const next = 1 - current;
+    const cur  = document.getElementById('slide-' + current);
+    const nxt  = document.getElementById('slide-' + next);
+    nxt.className = 'slide hidden-right';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      cur.className = 'slide hidden-left';
+      nxt.className = 'slide visible';
+      current = next;
+      updateIndicators();
+      setTimeout(() => { busy = false; }, 280);
+    }));
+  }
+
+  function updateIndicators() {
+    [0, 1].forEach(i => {
+      document.getElementById('dot-' + i).className = 'dot' + (i === current ? ' on' : '');
+      document.getElementById('lbl-' + i).className = 'photo-lbl' + (i === current ? ' on' : '');
+    });
+    const cl = document.getElementById('compare-label');
+    if (cl) cl.textContent = getLabel(current);
+  }
+
+  function backToPick() { showPhotoView('pick'); }
+
+  /* ─────────── TAP + SWIPE ─────────── */
+  let touchStartX = null;
+  let touchStartY = null;
+  let suppressClick = false;
+
+  function onStageTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }
+  function onStageTouchEnd(e) {
+    if (touchStartX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    touchStartX = null;
+    touchStartY = null;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (absX > 40 && absX > absY * 1.2) {
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 400);
+      swap();
+    }
+  }
+  function onStageClick() {
+    if (suppressClick) { suppressClick = false; return; }
+    swap();
+  }
+  function attachStageHandlers() {
+    const stage = document.getElementById('stage');
+    if (!stage || stage.dataset.bound === '1') return;
+    stage.addEventListener('touchstart', onStageTouchStart, { passive: true });
+    stage.addEventListener('touchend',   onStageTouchEnd,   { passive: true });
+    stage.addEventListener('click',      onStageClick);
+    stage.dataset.bound = '1';
+  }
+
+  function replaceCurrent() { document.getElementById('file-replace').click(); }
+
+  async function handleReplace(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+    try { await dbPut(photoKey(current), file); }
+    catch (e) { alert('Could not save photo: ' + e.message); return; }
+    if (photoUrls[current]) URL.revokeObjectURL(photoUrls[current]);
+    photoUrls[current] = URL.createObjectURL(file);
+    document.getElementById('img-' + current).src = photoUrls[current];
+    // Auto-default label to last-generated QR text if this slot has no label yet
+    const p = profiles.find(x => x.id === activeProfileId);
+    const currentLabel = (p && p.labels && p.labels[current]) ? String(p.labels[current]).trim() : '';
+    if (!currentLabel && lastQRText) {
+      setLabel(current, lastQRText);
+      updateAllLabels();
+    }
+    renderCard(current);
+  }
+
+  function showPhotoView(view) {
+    currentPhotoView = view;
+    document.getElementById('pick-screen').style.display    = view === 'pick'    ? 'flex' : 'none';
+    document.getElementById('compare-screen').style.display = view === 'compare' ? 'flex' : 'none';
+    if (view === 'pick') {
+      document.getElementById('slide-0').className = 'slide hidden-right';
+      document.getElementById('slide-1').className = 'slide hidden-right';
+    }
+  }
+
+  /* ─────────── MODAL ─────────── */
+  let modalConfirmHandler = null;
+  let modalUsesInput = false;
+
+  function showModal({ title, text, confirmLabel, cancelLabel, danger, withInput, inputDefault, inputPlaceholder, onConfirm }) {
+    document.getElementById('modal-title').textContent = title || 'Confirm';
+    document.getElementById('modal-text').textContent  = text || '';
+    document.getElementById('modal-text').style.display = (text ? '' : 'none');
+    document.getElementById('modal-cancel-btn').textContent = cancelLabel || 'Cancel';
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    confirmBtn.textContent = confirmLabel || 'OK';
+    confirmBtn.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
+
+    const inp = document.getElementById('modal-input');
+    modalUsesInput = !!withInput;
+    if (withInput) {
+      inp.style.display = '';
+      inp.value = inputDefault || '';
+      inp.placeholder = inputPlaceholder || '';
+      setTimeout(() => inp.focus(), 100);
+    } else {
+      inp.style.display = 'none';
+    }
+    modalConfirmHandler = onConfirm;
+    document.getElementById('modal-backdrop').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    modalConfirmHandler = null;
+    modalUsesInput = false;
+  }
+  async function confirmModal() {
+    const handler = modalConfirmHandler;
+    const val = modalUsesInput ? document.getElementById('modal-input').value : undefined;
+    closeModal();
+    if (handler) await handler(val);
+  }
+
+  /* ─────────── QR ─────────── */
+  function useQRPreset(text) {
+    const input = document.getElementById('qr-input');
+    input.value = text;
+    document.getElementById('qr-gen-btn').disabled = false;
+    try { localStorage.setItem('diptych-qr-text', text); } catch {}
+    generateQR();
+  }
+
+  function onQRInput() {
+    const text = document.getElementById('qr-input').value;
+    document.getElementById('qr-gen-btn').disabled = !text.trim();
+    try { localStorage.setItem('diptych-qr-text', text); } catch {}
+    document.getElementById('qr-output').classList.remove('visible');
+    document.getElementById('qr-error').style.display = 'none';
+  }
+
+  function generateQR() {
+    const text = document.getElementById('qr-input').value.trim();
+    const errEl = document.getElementById('qr-error');
+    errEl.style.display = 'none';
+    if (!text) return;
+    if (typeof qrcode === 'undefined') {
+      errEl.textContent = 'QR library failed to load. Reconnect once to fetch it, then it will work offline.';
+      errEl.style.display = 'block';
+      return;
+    }
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(text);
+      qr.make();
+      const dataUrl = qr.createDataURL(8, 2);
+      document.getElementById('qr-image').src = dataUrl;
+      document.getElementById('qr-output').classList.add('visible');
+      const caption = text.length > 40 ? text.slice(0, 40) + '…' : text;
+      document.getElementById('qr-caption').textContent = caption;
+      lastQRText = text;
+    } catch (e) {
+      errEl.textContent = 'Could not generate QR — text may be too long.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  /* ─────────── BOOT ─────────── */
+  function withTimeout(promise, ms, fallback) {
+    return Promise.race([
+      promise,
+      new Promise(resolve => setTimeout(() => resolve(fallback), ms))
+    ]);
+  }
+
+  async function init() {
+    // Quick visual setup
+    renderCard(0);
+    renderCard(1);
+    updateNote();
+    attachStageHandlers();
+
+    // Restore QR text (with migration of old default + first-launch default)
+    try {
+      let savedText = localStorage.getItem('diptych-qr-text');
+      if (savedText === 'Spirit1776') savedText = 'Spirit1776!';
+      if (!savedText) savedText = 'Spirit1776!';
+      document.getElementById('qr-input').value = savedText;
+      document.getElementById('qr-gen-btn').disabled = !savedText.trim();
+      localStorage.setItem('diptych-qr-text', savedText);
+      lastQRText = savedText;
+    } catch {}
+
+    // Always open to the photo tab — that's the main screen
+    switchTab('photo');
+
+    // Profile + photo load (with timeout for safety)
+    try {
+      loadProfilesFromStorage();
+      await withTimeout(ensureDefaultProfile(), 3000, null);
+      await withTimeout(loadActiveProfilePhotos(), 3000, null);
+    } catch (e) { console.warn('Profile init issue:', e); }
+
+    renderCard(0);
+    renderCard(1);
+    updateNote();
+    updateClearBtn();
+    updateProfilePill();
+    updateAllLabels();
+
+    // Default to compare if both photos exist
+    currentPhotoView = (photoUrls[0] && photoUrls[1]) ? 'compare' : 'pick';
+    if (currentTab === 'photo' && currentPhotoView === 'compare') {
+      openCompare();
+    }
+
+    // Modal backdrop close
+    const mb = document.getElementById('modal-backdrop');
+    if (mb) mb.addEventListener('click', (e) => { if (e.target === mb) closeModal(); });
+    const sb = document.getElementById('action-modal-backdrop');
+    if (sb) sb.addEventListener('click', (e) => { if (e.target === sb) closeActionModal(); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+</body>
+</html>
