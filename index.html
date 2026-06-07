@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Juxd" />
+  <title>Juxd</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" />
+  </noscript>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: #0a0a0a;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overscroll-behavior: none;
+      overflow: hidden;
+    }
+
+    #app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #0a0a0a;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .header {
+      padding: 14px 28px 6px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .header-titles { display: flex; flex-direction: column; gap: 3px; }
+    .title {
+      font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+      font-size: 26px;
+      color: #f5f0e8;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #444;
+      font-weight: 300;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 24px 4px;
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px 0;
+      background: transparent;
+      border: none;
+      color: #333;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .tab.active { color: #f5f0e8; }
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 1px;
+      background: #f5f0e8;
+      transition: width 0.25s ease;
+    }
+    .tab.active::after { width: 24px; }
+
+    /* PROFILE STRIP */
+    .profile-strip {
+      display: none;
+      gap: 8px;
+      padding: 6px 16px 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .profile-strip::-webkit-scrollbar { display: none; }
+    .profile-strip.visible { display: flex; }
+    .profile-chip {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 100px;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      color: #999;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 60vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .profile-chip:active { background: #181818; }
+    .profile-chip.active { background: #f5f0e8; color: #0a0a0a; border-color: #f5f0e8; font-weight: 500; }
+    .profile-chip-pencil { font-size: 11px; opacity: 0.55; margin-left: 2px; }
+    .profile-chip-add {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      border-radius: 100px;
+      background: #111;
+      border: 1px solid #1e1e1e;
+      color: #888;
+      font-family: inherit;
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .profile-chip-add:active { background: #1a1a1a; color: #f5f0e8; transform: scale(0.96); }
+
+    /* MANAGE SCREEN */
+    #manage-screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      padding: 12px 20px 20px;
+      gap: 14px;
+      overflow: hidden;
+    }
+    .manage-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .photo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #111;
+      border: 1px solid #1c1c1c;
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .photo-row.sortable-ghost { opacity: 0.35; }
+    .photo-row.sortable-chosen { background: #161616; border-color: #2a2a2a; }
+    .row-thumb {
+      width: 56px; height: 56px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #1a1a1a;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .row-label {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #1f1f1f;
+      padding: 8px 2px;
+      color: #f5f0e8;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .row-label:focus { border-color: #3a3a3a; }
+    .row-label::placeholder { color: #3a3a3a; }
+    .row-btn {
+      width: 34px; height: 34px;
+      flex-shrink: 0;
+      border-radius: 9px;
+      background: transparent;
+      border: none;
+      color: #555;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      touch-action: none;
+    }
+    .row-btn:active { background: #1c1c1c; color: #aaa; }
+    .row-drag { cursor: grab; font-size: 17px; }
+
+    .add-photo-btn {
+      flex-shrink: 0;
+      width: 100%;
+      padding: 14px 0;
+      border-radius: 14px;
+      border: 1.5px dashed #2a2a2a;
+      background: transparent;
+      color: #777;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .add-photo-btn:active { background: #131313; border-color: #3a3a3a; color: #aaa; }
+    .add-photo-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty-hint {
+      text-align: center;
+      color: #2e2e2e;
+      font-size: 13px;
+      padding: 30px 0;
+    }
+
+    .primary-btn {
+      flex-shrink: 0;
+      width: 100%;
+      padding: 16px 0;
+      border-radius: 14px;
+      background: #f5f0e8;
+      color: #0a0a0a;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: all 0.15s;
+    }
+    .primary-btn:disabled { background: #1a1a1a; color: #2e2e2e; cursor: not-allowed; }
+    .primary-btn:not(:disabled):active { transform: scale(0.98); background: #e8e3dc; }
+    input[type="file"] { display: none; }
+
+    /* VIEW SCREEN (clean) */
+    #view-screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
+    .view-header {
+      flex-shrink: 0;
+      padding: 12px 20px 8px;
+      display: grid;
+      grid-template-columns: 60px 1fr 60px;
+      align-items: center;
+    }
+    .view-edit {
+      justify-self: start;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 4px;
+      transition: color 0.15s;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .view-edit:active { color: #ccc; }
+    .view-label {
+      justify-self: center;
+      color: #f5f0e8;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .image-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #0d0d0d;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .slide img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+    .slide.visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
+    .slide.exit-left  { opacity: 0; transform: translateX(-18px); }
+    .slide.exit-right { opacity: 0; transform: translateX(18px); }
+    .slide.enter-right { opacity: 0; transform: translateX(18px); }
+    .slide.enter-left  { opacity: 0; transform: translateX(-18px); }
+
+    .tap-hint {
+      position: absolute;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      padding: 7px 16px;
+      border-radius: 100px;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: fadeHint 3s forwards;
+    }
+    @keyframes fadeHint {
+      0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
+    }
+    .dots {
+      flex-shrink: 0;
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+      padding: 16px 24px 18px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      transition: background 0.25s, width 0.25s;
+    }
+    .dot.on { background: #f5f0e8; width: 20px; border-radius: 4px; }
+
+    /* QR SCREEN */
+    #qr-screen {
+      flex: 1; display: none; flex-direction: column;
+      padding: 16px 24px 32px; gap: 18px; overflow-y: auto;
+    }
+    .qr-presets-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .qr-presets-label, .qr-input-label {
+      font-size: 11px; color: #555; letter-spacing: 0.6px;
+      text-transform: uppercase; padding-left: 2px;
+    }
+    .qr-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+    .qr-preset {
+      background: #111; border: 1px solid #1f1f1f; border-radius: 100px;
+      padding: 9px 16px; color: #ccc; font-family: inherit; font-size: 13px;
+      cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .qr-preset::before { content: '⚡'; color: #886; font-size: 10px; }
+    .qr-preset:active { background: #1a1a1a; color: #f5f0e8; border-color: #2a2a2a; transform: scale(0.97); }
+    .qr-input-wrap { position: relative; display: flex; flex-direction: column; gap: 8px; }
+    .qr-input {
+      width: 100%; min-height: 96px; max-height: 200px; resize: vertical;
+      background: #111; border: 1px solid #1f1f1f; border-radius: 14px;
+      padding: 14px 16px; color: #f5f0e8; font-family: inherit; font-size: 15px;
+      line-height: 1.4; outline: none; transition: border-color 0.2s, background 0.2s; -webkit-appearance: none;
+    }
+    .qr-input:focus { border-color: #333; background: #131313; }
+    .qr-input::placeholder { color: #333; }
+    .qr-output { display: none; flex-direction: column; align-items: center; gap: 14px; }
+    .qr-output.visible { display: flex; }
+    .qr-card {
+      background: #f5f0e8; border-radius: 20px; padding: 26px; width: 100%; max-width: 360px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .qr-card img {
+      width: 100%; max-width: 280px; aspect-ratio: 1;
+      image-rendering: pixelated; image-rendering: crisp-edges; display: block;
+    }
+    .qr-card-caption { font-size: 10px; color: #888; letter-spacing: 0.8px; text-transform: uppercase; text-align: center; }
+    .save-hint { font-size: 11px; color: #444; text-align: center; letter-spacing: 0.3px; max-width: 280px; line-height: 1.5; }
+    .save-hint strong { color: #888; font-weight: 500; }
+    .qr-secondary-btn {
+      width: 100%; max-width: 360px; padding: 13px 0; border-radius: 12px;
+      background: #161616; border: 1px solid #242424; color: #ccc;
+      font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+    }
+    .qr-secondary-btn:active { background: #1e1e1e; transform: scale(0.98); }
+    .error-msg { color: #c97777; font-size: 12px; text-align: center; padding: 8px; }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; padding: 24px;
+      z-index: 100; opacity: 0; transition: opacity 0.18s ease;
+    }
+    .modal-backdrop.open { display: flex; opacity: 1; }
+    .modal {
+      background: #161616; border: 1px solid #242424; border-radius: 18px;
+      padding: 22px 22px 16px; max-width: 340px; width: 100%;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6); transform: scale(0.96); transition: transform 0.18s ease;
+    }
+    .modal-backdrop.open .modal { transform: scale(1); }
+    .modal-title {
+      font-family: 'DM Serif Display', Georgia, serif; font-size: 19px;
+      color: #f5f0e8; letter-spacing: -0.3px; margin-bottom: 6px;
+    }
+    .modal-text { font-size: 13px; color: #777; line-height: 1.5; margin-bottom: 16px; }
+    .modal-input {
+      width: 100%; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 12px 14px; color: #f5f0e8; font-family: inherit; font-size: 14px;
+      outline: none; margin-bottom: 18px; -webkit-appearance: none;
+    }
+    .modal-input:focus { border-color: #444; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-btn {
+      flex: 1; padding: 11px 0; border-radius: 10px; font-family: inherit;
+      font-size: 13px; font-weight: 500; letter-spacing: 0.2px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.15s;
+    }
+    .modal-btn.cancel { background: transparent; border-color: #2a2a2a; color: #888; }
+    .modal-btn.cancel:active { background: #1c1c1c; color: #aaa; }
+    .modal-btn.primary { background: #f5f0e8; color: #0a0a0a; }
+    .modal-btn.primary:active { background: #e8e3dc; transform: scale(0.98); }
+    .modal-btn.danger { background: #c97777; color: #0a0a0a; }
+    .modal-btn.danger:active { background: #b66666; transform: scale(0.98); }
+    .action-buttons { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .action-modal-btn {
+      width: 100%; padding: 14px 0; border-radius: 12px; background: #1d1d1d;
+      border: 1px solid #2a2a2a; color: #f5f0e8; font-family: inherit; font-size: 14px;
+      font-weight: 500; cursor: pointer; transition: all 0.15s; letter-spacing: 0.1px;
+    }
+    .action-modal-btn:active { background: #262626; transform: scale(0.98); }
+    .action-modal-btn.danger { color: #c97777; border-color: #3a2222; background: #1a1010; }
+    .action-modal-btn.danger:active { background: #221414; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-titles">
+      <div class="title">Juxd</div>
+      <div class="subtitle" id="header-subtitle">Compare</div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="photo" onclick="switchTab('photo')">Photos</button>
+    <button class="tab" data-tab="qr" onclick="switchTab('qr')">QR Code</button>
+  </div>
+
+  <div class="profile-strip" id="profile-strip"></div>
+
+  <!-- MANAGE SCREEN -->
+  <div id="manage-screen">
+    <div class="manage-list" id="manage-list"></div>
+    <button class="add-photo-btn" id="add-photo-btn" onclick="triggerAddPhoto()">＋ Add photo</button>
+    <button class="primary-btn" id="view-btn" disabled onclick="openView()">View</button>
+    <input type="file" id="file-add" accept="image/*" onchange="handleAddPhoto(this)" />
+    <input type="file" id="file-replace" accept="image/*" onchange="handleReplacePhoto(this)" />
+  </div>
+
+  <!-- VIEW SCREEN -->
+  <div id="view-screen">
+    <div class="view-header">
+      <button class="view-edit" onclick="backToManage()">‹ Edit</button>
+      <div class="view-label" id="view-label">Photo 1</div>
+      <span></span>
+    </div>
+    <div class="image-stage" id="stage"></div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <!-- QR SCREEN -->
+  <div id="qr-screen">
+    <div class="qr-presets-wrap">
+      <div class="qr-presets-label">Presets</div>
+      <div class="qr-presets">
+        <button class="qr-preset" onclick="useQRPreset('Spirit1776!')">Spirit1776!</button>
+      </div>
+    </div>
+    <div class="qr-input-wrap">
+      <div class="qr-input-label">Text or URL</div>
+      <textarea id="qr-input" class="qr-input" placeholder="Type a URL, message, WiFi info, contact details, anything…" oninput="onQRInput()"></textarea>
+    </div>
+    <button class="primary-btn" id="qr-gen-btn" disabled onclick="generateQR()">Generate QR Code</button>
+    <div class="error-msg" id="qr-error" style="display:none;"></div>
+    <div class="qr-output" id="qr-output">
+      <div class="qr-card">
+        <img id="qr-image" alt="QR code" />
+        <div class="qr-card-caption" id="qr-caption">Scan to view</div>
+      </div>
+      <div class="save-hint"><strong>Long-press</strong> the QR code, then tap <strong>Save to Photos</strong>.</div>
+      <button class="qr-secondary-btn" onclick="addQRAsPhoto()">＋ Add this QR to current profile</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM / INPUT MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <div class="modal-title" id="modal-title">Confirm</div>
+      <div class="modal-text" id="modal-text"></div>
+      <input class="modal-input" id="modal-input" type="text" style="display:none" />
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeModal()" id="modal-cancel-btn">Cancel</button>
+        <button class="modal-btn primary" onclick="confirmModal()" id="modal-confirm-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE ACTION MODAL -->
+  <div class="modal-backdrop" id="action-modal-backdrop">
+    <div class="modal">
+      <div class="modal-title" id="action-modal-title">Profile</div>
+      <div class="action-buttons">
+        <button class="action-modal-btn" onclick="actionRename()">Rename profile</button>
+        <button class="action-modal-btn danger" id="action-delete-btn" onclick="actionDelete()">Delete profile</button>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeActionModal()" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─────────── INDEXEDDB ─────────── */
+  const DB_NAME = 'diptych-db';
+  const STORE = 'photos';
+  let dbPromise;
+  function openDB() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+  async function dbPut(key, blob) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(blob, key);
+      tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    });
+  }
+  async function dbGet(key) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const r = tx.objectStore(STORE).get(key);
+      r.onsuccess = () => res(r.result || null); r.onerror = () => rej(r.error);
+    });
+  }
+  async function dbDel(key) {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    });
+  }
+
+  /* ─────────── STATE ─────────── */
+  const MAX_PHOTOS = 12;
+  let profiles = [];
+  let activeProfileId = null;
+  let photoBlobUrls = {};      // photoId -> objectURL
+  let current = 0;             // index into active profile's photos
+  let busy = false;
+  let currentTab = 'photo';
+  let currentPhotoView = 'manage'; // 'manage' | 'view'
+  let lastQRText = '';
+  try {
+    lastQRText = localStorage.getItem('diptych-qr-text') || '';
+    if (lastQRText === 'Spirit1776') lastQRText = 'Spirit1776!';
+  } catch {}
+
+  /* ─────────── PROFILES ─────────── */
+  function loadProfilesFromStorage() {
+    try {
+      const raw = localStorage.getItem('diptych-profiles');
+      profiles = raw ? JSON.parse(raw) : [];
+    } catch { profiles = []; }
+    activeProfileId = localStorage.getItem('diptych-active-profile') || null;
+    profiles.forEach(p => {
+      // Migrate old { labels:[l0,l1] } → { photos:[{id,label}] }
+      if (!Array.isArray(p.photos)) {
+        const labels = Array.isArray(p.labels) ? p.labels : ['', ''];
+        p.photos = labels.map((label, i) => ({ id: String(i), label: (label === 'Photo ' + (i+1)) ? '' : (label || '') }));
+      }
+      delete p.labels;
+      if (p.name === 'My Photos' || p.name === 'Spirit1776') p.name = 'Spirit of 76';
+    });
+  }
+  function saveProfilesToStorage() {
+    localStorage.setItem('diptych-profiles', JSON.stringify(profiles));
+    if (activeProfileId) localStorage.setItem('diptych-active-profile', activeProfileId);
+  }
+  function genId(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function activeProfile() { return profiles.find(p => p.id === activeProfileId) || null; }
+  function photoKey(photoId) { return 'photo-' + activeProfileId + '-' + photoId; }
+  function photoCount() { const p = activeProfile(); return p ? p.photos.length : 0; }
+
+  async function ensureDefaultProfile() {
+    if (profiles.length === 0) {
+      const id = genId('p_');
+      profiles = [{ id, name: 'Spirit of 76', photos: [] }];
+      activeProfileId = id;
+      saveProfilesToStorage();
+      // Migrate legacy single-set keys (photo-0/photo-1 or photo-{old}-0/1)
+      try {
+        const legacy = [];
+        const o0 = await dbGet('photo-0'); const o1 = await dbGet('photo-1');
+        if (o0) legacy.push(o0); if (o1) legacy.push(o1);
+        for (const blob of legacy) {
+          const pid = genId('ph_');
+          await dbPut('photo-' + id + '-' + pid, blob);
+          profiles[0].photos.push({ id: pid, label: '' });
+        }
+        if (o0) await dbDel('photo-0'); if (o1) await dbDel('photo-1');
+        saveProfilesToStorage();
+      } catch (e) { console.warn('Legacy migration skipped:', e); }
+    }
+    if (!activeProfileId || !profiles.find(p => p.id === activeProfileId)) {
+      activeProfileId = profiles[0].id;
+      saveProfilesToStorage();
+    }
+  }
+
+  function revokeAllUrls() {
+    Object.values(photoBlobUrls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+    photoBlobUrls = {};
+  }
+
+  async function loadActiveProfilePhotos() {
+    revokeAllUrls();
+    const p = activeProfile();
+    if (!p) return;
+    for (const photo of p.photos) {
+      try {
+        const blob = await dbGet(photoKey(photo.id));
+        if (blob) photoBlobUrls[photo.id] = URL.createObjectURL(blob);
+      } catch (e) { console.warn('photo load failed', e); }
+    }
+  }
+
+  function activeProfileName() { const p = activeProfile(); return p ? p.name : 'Profile'; }
+
+  function getLabel(index) {
+    const p = activeProfile();
+    if (!p || !p.photos[index]) return 'Photo ' + (index + 1);
+    const stored = String(p.photos[index].label || '').trim();
+    return stored || ('Photo ' + (index + 1));
+  }
+
+  /* ─────────── PROFILE STRIP + ACTIONS ─────────── */
+  function renderProfileStrip() {
+    const strip = document.getElementById('profile-strip');
+    strip.innerHTML = '';
+    profiles.forEach(p => {
+      const chip = document.createElement('button');
+      chip.className = 'profile-chip' + (p.id === activeProfileId ? ' active' : '');
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = p.name;
+      chip.appendChild(nameSpan);
+      if (p.id === activeProfileId) {
+        const pencil = document.createElement('span');
+        pencil.className = 'profile-chip-pencil';
+        pencil.textContent = '✎';
+        chip.appendChild(pencil);
+      }
+      chip.onclick = () => { (p.id === activeProfileId) ? openProfileActions(p.id) : selectProfile(p.id); };
+      strip.appendChild(chip);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'profile-chip-add';
+    addBtn.textContent = '+';
+    addBtn.onclick = promptNewProfile;
+    strip.appendChild(addBtn);
+    setTimeout(() => {
+      const a = strip.querySelector('.profile-chip.active');
+      if (a && a.scrollIntoView) a.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }, 50);
+  }
+
+  let actionTargetId = null;
+  function openProfileActions(id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    actionTargetId = id;
+    document.getElementById('action-modal-title').textContent = p.name;
+    document.getElementById('action-delete-btn').style.display = profiles.length > 1 ? '' : 'none';
+    document.getElementById('action-modal-backdrop').classList.add('open');
+  }
+  function closeActionModal() {
+    document.getElementById('action-modal-backdrop').classList.remove('open');
+    actionTargetId = null;
+  }
+  function actionRename() { const id = actionTargetId; closeActionModal(); setTimeout(() => id && renameProfile(id), 120); }
+  function actionDelete() { const id = actionTargetId; closeActionModal(); setTimeout(() => id && deleteProfile(id), 120); }
+
+  async function selectProfile(id) {
+    if (id === activeProfileId) return;
+    activeProfileId = id;
+    saveProfilesToStorage();
+    await loadActiveProfilePhotos();
+    current = 0;
+    renderProfileStrip();
+    refreshPhotoTab();
+  }
+
+  function renameProfile(id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    showModal({
+      title: 'Rename profile', withInput: true, inputDefault: p.name,
+      inputPlaceholder: 'Profile name', confirmLabel: 'Save',
+      onConfirm: (value) => {
+        const t = (value || '').trim();
+        if (!t) return;
+        p.name = t.slice(0, 40);
+        saveProfilesToStorage();
+        renderProfileStrip();
+        if (currentPhotoView === 'view') document.getElementById('view-label').textContent = getLabel(current);
+      }
+    });
+  }
+
+  function promptNewProfile() {
+    showModal({
+      title: 'New profile', withInput: true, inputPlaceholder: 'e.g. Vacation, Outfits, Recipes…',
+      confirmLabel: 'Create',
+      onConfirm: async (value) => {
+        const name = (value || '').trim().slice(0, 40) || 'Untitled';
+        const id = genId('p_');
+        profiles.push({ id, name, photos: [] });
+        activeProfileId = id;
+        saveProfilesToStorage();
+        await loadActiveProfilePhotos();
+        current = 0;
+        renderProfileStrip();
+        currentPhotoView = 'manage';
+        refreshPhotoTab();
+      }
+    });
+  }
+
+  async function deleteProfile(id) {
+    showModal({
+      title: 'Delete profile?', text: 'This removes the profile and all of its photos.',
+      confirmLabel: 'Delete', danger: true,
+      onConfirm: async () => {
+        const p = profiles.find(x => x.id === id);
+        if (p) { for (const photo of p.photos) { try { await dbDel('photo-' + id + '-' + photo.id); } catch {} } }
+        profiles = profiles.filter(x => x.id !== id);
+        if (id === activeProfileId) {
+          if (profiles.length === 0) {
+            const newId = genId('p_');
+            profiles = [{ id: newId, name: 'Spirit of 76', photos: [] }];
+            activeProfileId = newId;
+          } else {
+            activeProfileId = profiles[0].id;
+          }
+          saveProfilesToStorage();
+          await loadActiveProfilePhotos();
+          current = 0;
+          renderProfileStrip();
+          refreshPhotoTab();
+        } else {
+          saveProfilesToStorage();
+          renderProfileStrip();
+        }
+      }
+    });
+  }
+
+  /* ─────────── PHOTO MANAGE ─────────── */
+  let manageSortable = null;
+
+  function renderManageList() {
+    const list = document.getElementById('manage-list');
+    if (manageSortable) { try { manageSortable.destroy(); } catch {} manageSortable = null; }
+    list.innerHTML = '';
+    const p = activeProfile();
+    if (!p || p.photos.length === 0) {
+      const hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = 'No photos yet — add one or more below.';
+      list.appendChild(hint);
+    } else {
+      p.photos.forEach((photo, index) => {
+        const row = document.createElement('div');
+        row.className = 'photo-row';
+        row.dataset.photoId = photo.id;
+
+        const thumb = document.createElement('img');
+        thumb.className = 'row-thumb';
+        thumb.src = photoBlobUrls[photo.id] || '';
+        thumb.alt = 'Photo';
+        thumb.onclick = () => replacePhoto(photo.id);
+
+        const label = document.createElement('input');
+        label.className = 'row-label';
+        label.type = 'text';
+        label.maxLength = 40;
+        label.value = photo.label || '';
+        label.placeholder = 'Photo ' + (index + 1);
+        label.oninput = (e) => { photo.label = e.target.value; saveProfilesToStorage(); };
+
+        const dragBtn = document.createElement('button');
+        dragBtn.className = 'row-btn row-drag';
+        dragBtn.innerHTML = '≡';
+        dragBtn.title = 'Drag to reorder';
+        // only meaningful with 2+ photos
+        dragBtn.style.visibility = p.photos.length > 1 ? 'visible' : 'hidden';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'row-btn';
+        delBtn.innerHTML = '×';
+        delBtn.title = 'Remove';
+        delBtn.onclick = () => removePhoto(photo.id);
+
+        row.appendChild(thumb);
+        row.appendChild(label);
+        row.appendChild(dragBtn);
+        row.appendChild(delBtn);
+        list.appendChild(row);
+      });
+
+      // Enable drag reorder for 2+ photos
+      if (p.photos.length > 1 && window.Sortable) {
+        manageSortable = new Sortable(list, {
+          handle: '.row-drag',
+          animation: 150,
+          onEnd: (evt) => {
+            const prof = activeProfile();
+            if (!prof || evt.oldIndex === evt.newIndex) return;
+            const [moved] = prof.photos.splice(evt.oldIndex, 1);
+            prof.photos.splice(evt.newIndex, 0, moved);
+            saveProfilesToStorage();
+            renderManageList();
+          }
+        });
+      }
+    }
+    updateAddButton();
+    updateViewButton();
+  }
+
+  function updateAddButton() {
+    document.getElementById('add-photo-btn').disabled = photoCount() >= MAX_PHOTOS;
+  }
+  function updateViewButton() {
+    document.getElementById('view-btn').disabled = photoCount() < 1;
+  }
+
+  function triggerAddPhoto() {
+    if (photoCount() >= MAX_PHOTOS) return;
+    document.getElementById('file-add').click();
+  }
+
+  async function handleAddPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+    const p = activeProfile();
+    if (!p) return;
+    const pid = genId('ph_');
+    try { await dbPut(photoKey(pid), file); }
+    catch (e) { alert('Could not save photo: ' + e.message); return; }
+    photoBlobUrls[pid] = URL.createObjectURL(file);
+    p.photos.push({ id: pid, label: '' });
+    saveProfilesToStorage();
+    renderManageList();
+  }
+
+  let replaceTargetId = null;
+  function replacePhoto(photoId) {
+    replaceTargetId = photoId;
+    document.getElementById('file-replace').click();
+  }
+  async function handleReplacePhoto(input) {
+    const file = input.files[0];
+    if (!file || !replaceTargetId) { input.value = ''; return; }
+    input.value = '';
+    const pid = replaceTargetId;
+    replaceTargetId = null;
+    try { await dbPut(photoKey(pid), file); }
+    catch (e) { alert('Could not save photo: ' + e.message); return; }
+    if (photoBlobUrls[pid]) URL.revokeObjectURL(photoBlobUrls[pid]);
+    photoBlobUrls[pid] = URL.createObjectURL(file);
+    renderManageList();
+  }
+
+  function removePhoto(photoId) {
+    const p = activeProfile();
+    if (!p) return;
+    showModal({
+      title: 'Remove photo?', text: 'This photo will be removed from this profile.',
+      confirmLabel: 'Remove', danger: true,
+      onConfirm: async () => {
+        try { await dbDel(photoKey(photoId)); } catch {}
+        if (photoBlobUrls[photoId]) { URL.revokeObjectURL(photoBlobUrls[photoId]); delete photoBlobUrls[photoId]; }
+        p.photos = p.photos.filter(x => x.id !== photoId);
+        saveProfilesToStorage();
+        if (current >= p.photos.length) current = Math.max(0, p.photos.length - 1);
+        renderManageList();
+      }
+    });
+  }
+
+  /* ─────────── VIEW (clean) ─────────── */
+  function buildSlides() {
+    const stage = document.getElementById('stage');
+    stage.innerHTML = '';
+    const p = activeProfile();
+    if (!p) return;
+    p.photos.forEach((photo, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'slide' + (i === current ? ' visible' : '');
+      slide.dataset.index = i;
+      const img = document.createElement('img');
+      img.src = photoBlobUrls[photo.id] || '';
+      img.draggable = false;
+      slide.appendChild(img);
+      stage.appendChild(slide);
+    });
+  }
+
+  function renderDots() {
+    const dots = document.getElementById('dots');
+    dots.innerHTML = '';
+    const n = photoCount();
+    if (n < 2) { dots.style.display = 'none'; return; }
+    dots.style.display = 'flex';
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === current ? ' on' : '');
+      dots.appendChild(d);
+    }
+  }
+
+  function openView() {
+    const n = photoCount();
+    if (n < 1) return;
+    if (current >= n) current = 0;
+    showPhotoView('view');
+    buildSlides();
+    renderDots();
+    document.getElementById('view-label').textContent = getLabel(current);
+    if (n > 1) addHint();
+  }
+
+  function addHint() {
+    const stage = document.getElementById('stage');
+    const old = stage.querySelector('.tap-hint');
+    if (old) old.remove();
+    const h = document.createElement('div');
+    h.className = 'tap-hint';
+    h.textContent = 'Tap or swipe to switch';
+    stage.appendChild(h);
+    setTimeout(() => h.remove(), 3200);
+  }
+
+  function goTo(nextIndex, direction) {
+    const n = photoCount();
+    if (n < 2 || busy) return;
+    nextIndex = (nextIndex + n) % n;
+    if (nextIndex === current) return;
+    busy = true;
+    const stage = document.getElementById('stage');
+    const curSlide = stage.querySelector('.slide[data-index="' + current + '"]');
+    const nextSlide = stage.querySelector('.slide[data-index="' + nextIndex + '"]');
+    if (!curSlide || !nextSlide) { busy = false; return; }
+
+    // direction: 'forward' (next comes from right), 'backward' (from left)
+    nextSlide.className = 'slide ' + (direction === 'backward' ? 'enter-left' : 'enter-right');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      curSlide.className = 'slide ' + (direction === 'backward' ? 'exit-right' : 'exit-left');
+      nextSlide.className = 'slide visible';
+      current = nextIndex;
+      renderDots();
+      document.getElementById('view-label').textContent = getLabel(current);
+      setTimeout(() => { busy = false; }, 280);
+    }));
+  }
+
+  function nextPhoto() { goTo(current + 1, 'forward'); }
+  function prevPhoto() { goTo(current - 1, 'backward'); }
+
+  function backToManage() { showPhotoView('manage'); }
+
+  /* tap + swipe */
+  let touchStartX = null, touchStartY = null, suppressClick = false;
+  function onStageTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+  }
+  function onStageTouchEnd(e) {
+    if (touchStartX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+    touchStartX = null; touchStartY = null;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (absX > 40 && absX > absY * 1.2) {
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 400);
+      if (dx < 0) nextPhoto(); else prevPhoto();
+    }
+  }
+  function onStageClick() {
+    if (suppressClick) { suppressClick = false; return; }
+    nextPhoto();
+  }
+  function attachStageHandlers() {
+    const stage = document.getElementById('stage');
+    if (!stage || stage.dataset.bound === '1') return;
+    stage.addEventListener('touchstart', onStageTouchStart, { passive: true });
+    stage.addEventListener('touchend', onStageTouchEnd, { passive: true });
+    stage.addEventListener('click', onStageClick);
+    stage.dataset.bound = '1';
+  }
+
+  function showPhotoView(view) {
+    currentPhotoView = view;
+    document.getElementById('manage-screen').style.display = view === 'manage' ? 'flex' : 'none';
+    document.getElementById('view-screen').style.display = view === 'view' ? 'flex' : 'none';
+    if (view === 'manage') renderManageList();
+  }
+
+  // Refresh the photo tab into the appropriate sub-view
+  function refreshPhotoTab() {
+    if (currentTab !== 'photo') return;
+    const n = photoCount();
+    if (currentPhotoView === 'view' && n >= 1) openView();
+    else showPhotoView('manage');
+  }
+
+  /* ─────────── TABS ─────────── */
+  function switchTab(name) {
+    currentTab = name;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.getElementById('profile-strip').classList.toggle('visible', name === 'photo');
+    if (name === 'photo') {
+      document.getElementById('header-subtitle').textContent = 'Compare';
+      document.getElementById('qr-screen').style.display = 'none';
+      refreshPhotoTab();
+    } else {
+      document.getElementById('header-subtitle').textContent = 'QR Generator';
+      document.getElementById('manage-screen').style.display = 'none';
+      document.getElementById('view-screen').style.display = 'none';
+      document.getElementById('qr-screen').style.display = 'flex';
+    }
+    try { localStorage.setItem('diptych-tab', name); } catch {}
+  }
+
+  /* ─────────── MODAL ─────────── */
+  let modalConfirmHandler = null, modalUsesInput = false;
+  function showModal({ title, text, confirmLabel, cancelLabel, danger, withInput, inputDefault, inputPlaceholder, onConfirm }) {
+    document.getElementById('modal-title').textContent = title || 'Confirm';
+    const textEl = document.getElementById('modal-text');
+    textEl.textContent = text || '';
+    textEl.style.display = text ? '' : 'none';
+    document.getElementById('modal-cancel-btn').textContent = cancelLabel || 'Cancel';
+    const cb = document.getElementById('modal-confirm-btn');
+    cb.textContent = confirmLabel || 'OK';
+    cb.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
+    const inp = document.getElementById('modal-input');
+    modalUsesInput = !!withInput;
+    if (withInput) {
+      inp.style.display = ''; inp.value = inputDefault || ''; inp.placeholder = inputPlaceholder || '';
+      setTimeout(() => inp.focus(), 100);
+    } else { inp.style.display = 'none'; }
+    modalConfirmHandler = onConfirm;
+    document.getElementById('modal-backdrop').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    modalConfirmHandler = null; modalUsesInput = false;
+  }
+  async function confirmModal() {
+    const h = modalConfirmHandler;
+    const v = modalUsesInput ? document.getElementById('modal-input').value : undefined;
+    closeModal();
+    if (h) await h(v);
+  }
+
+  /* ─────────── QR ─────────── */
+  function useQRPreset(text) {
+    const input = document.getElementById('qr-input');
+    input.value = text;
+    document.getElementById('qr-gen-btn').disabled = false;
+    try { localStorage.setItem('diptych-qr-text', text); } catch {}
+    generateQR();
+  }
+  function onQRInput() {
+    const text = document.getElementById('qr-input').value;
+    document.getElementById('qr-gen-btn').disabled = !text.trim();
+    try { localStorage.setItem('diptych-qr-text', text); } catch {}
+    document.getElementById('qr-output').classList.remove('visible');
+    document.getElementById('qr-error').style.display = 'none';
+  }
+  function generateQR() {
+    const text = document.getElementById('qr-input').value.trim();
+    const errEl = document.getElementById('qr-error');
+    errEl.style.display = 'none';
+    if (!text) return;
+    if (typeof qrcode === 'undefined') {
+      errEl.textContent = 'QR library failed to load. Reconnect once to fetch it, then it works offline.';
+      errEl.style.display = 'block'; return;
+    }
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(text); qr.make();
+      document.getElementById('qr-image').src = qr.createDataURL(8, 2);
+      document.getElementById('qr-output').classList.add('visible');
+      const cap = text.length > 40 ? text.slice(0, 40) + '…' : text;
+      document.getElementById('qr-caption').textContent = cap;
+      lastQRText = text;
+    } catch (e) {
+      errEl.textContent = 'Could not generate QR — text may be too long.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  // Add the generated QR image as a photo in the current profile (labeled with the QR text)
+  async function addQRAsPhoto() {
+    const dataUrl = document.getElementById('qr-image').src;
+    if (!dataUrl) return;
+    const p = activeProfile();
+    if (!p) return;
+    if (p.photos.length >= MAX_PHOTOS) { alert('This profile is full (max ' + MAX_PHOTOS + ' photos).'); return; }
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const pid = genId('ph_');
+      await dbPut(photoKey(pid), blob);
+      photoBlobUrls[pid] = URL.createObjectURL(blob);
+      p.photos.push({ id: pid, label: lastQRText || '' });
+      saveProfilesToStorage();
+      switchTab('photo');
+      currentPhotoView = 'manage';
+      showPhotoView('manage');
+    } catch (e) {
+      alert('Could not add QR as a photo: ' + e.message);
+    }
+  }
+
+  /* ─────────── BOOT ─────────── */
+  function withTimeout(promise, ms, fallback) {
+    return Promise.race([promise, new Promise(r => setTimeout(() => r(fallback), ms))]);
+  }
+  async function init() {
+    attachStageHandlers();
+
+    // QR text default + migration
+    try {
+      let savedText = localStorage.getItem('diptych-qr-text');
+      if (savedText === 'Spirit1776') savedText = 'Spirit1776!';
+      if (!savedText) savedText = 'Spirit1776!';
+      document.getElementById('qr-input').value = savedText;
+      document.getElementById('qr-gen-btn').disabled = !savedText.trim();
+      localStorage.setItem('diptych-qr-text', savedText);
+      lastQRText = savedText;
+    } catch {}
+
+    switchTab('photo');
+
+    try {
+      loadProfilesFromStorage();
+      await withTimeout(ensureDefaultProfile(), 3000, null);
+      await withTimeout(loadActiveProfilePhotos(), 4000, null);
+    } catch (e) { console.warn('Profile init issue:', e); }
+
+    renderProfileStrip();
+
+    // Default to view if there's at least one photo
+    current = 0;
+    currentPhotoView = (photoCount() >= 1) ? 'view' : 'manage';
+    refreshPhotoTab();
+
+    const mb = document.getElementById('modal-backdrop');
+    if (mb) mb.addEventListener('click', e => { if (e.target === mb) closeModal(); });
+    const am = document.getElementById('action-modal-backdrop');
+    if (am) am.addEventListener('click', e => { if (e.target === am) closeActionModal(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>
+</body>
+</html>
